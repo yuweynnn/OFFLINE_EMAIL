@@ -76,7 +76,7 @@ header p {
   opacity: 0.9;
 }
 
-.dark-mode-btn, .tutorial-btn {
+.dark-mode-btn, .tutorial-btn, .offline-toggle-btn, .download-btn {
   position: absolute;
   top: 20px;
   background: rgba(255, 255, 255, 0.2);
@@ -97,8 +97,35 @@ header p {
   right: 70px;
 }
 
-.dark-mode-btn:hover, .tutorial-btn:hover {
+.offline-toggle-btn {
+  right: 120px;
+}
+
+.download-btn {
+  right: 170px;
+}
+
+.dark-mode-btn:hover, .tutorial-btn:hover, .offline-toggle-btn:hover, .download-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.offline-toggle-btn.offline-active {
+  background: rgba(255, 87, 34, 0.8);
+}
+
+.offline-toggle-btn.offline-active:hover {
+  background: rgba(255, 87, 34, 1);
+}
+
+.download-btn.downloading {
+  background: rgba(76, 175, 80, 0.8);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 .main-content {

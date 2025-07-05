@@ -25,6 +25,7 @@ class YuenDispoMail {
       this.db = null;
       this.maxOfflineEmails = 1000000; // Store up to 1 million emails
       this.offlineEmailAccounts = new Map(); // Track multiple email accounts offline
+      this.forceOfflineMode = false; // Manual offline mode toggle
 
       this.init();
   }
@@ -90,24 +91,30 @@ class YuenDispoMail {
   setupOfflineHandling() {
       // Handle online/offline events
       window.addEventListener('online', () => {
-          this.isOffline = false;
-          this.hideOfflineIndicator();
-          this.showNotification('Connection restored! Syncing emails...', 'success');
-          if (this.currentEmail) {
-              this.refreshEmails();
+          if (!this.forceOfflineMode) {
+              this.isOffline = false;
+              this.hideOfflineIndicator();
+              this.updateOfflineToggleButton();
+              this.showNotification('Connection restored! Syncing emails...', 'success');
+              if (this.currentEmail) {
+                  this.refreshEmails();
+              }
           }
       });
 
       window.addEventListener('offline', () => {
           this.isOffline = true;
           this.showOfflineIndicator();
+          this.updateOfflineToggleButton();
           this.showNotification('You are offline. Cached emails are still available.', 'warning');
       });
 
       // Show offline indicator if starting offline
-      if (this.isOffline) {
+      if (this.isOffline || this.forceOfflineMode) {
           this.showOfflineIndicator();
       }
+      
+      this.updateOfflineToggleButton();
   }
 
   showOfflineIndicator() {
@@ -405,6 +412,103 @@ class YuenDispoMail {
       modal.style.display = 'block';
   }
 
+  toggleOfflineMode() {
+      this.forceOfflineMode = !this.forceOfflineMode;
+      
+      if (this.forceOfflineMode) {
+          this.isOffline = true;
+          this.showOfflineIndicator();
+          this.showNotification('🛡️ Forced offline mode enabled - Working completely offline', 'info');
+      } else {
+          this.isOffline = !navigator.onLine;
+          if (navigator.onLine) {
+              this.hideOfflineIndicator();
+              this.showNotification('📡 Online mode restored - Will sync when connected', 'success');
+          }
+      }
+      
+      this.updateOfflineToggleButton();
+  }
+
+  updateOfflineToggleButton() {
+      const toggleBtn = document.getElementById('offlineToggle');
+      const icon = toggleBtn.querySelector('i');
+      
+      if (this.isOffline || this.forceOfflineMode) {
+          toggleBtn.classList.add('offline-active');
+          icon.className = 'fas fa-wifi-slash';
+          toggleBtn.title = 'Switch to Online Mode';
+      } else {
+          toggleBtn.classList.remove('offline-active');
+          icon.className = 'fas fa-wifi';
+          toggleBtn.title = 'Switch to Offline Mode';
+      }
+  }
+
+  async downloadOfflineData() {
+      const downloadBtn = document.getElementById('downloadBtn');
+      const icon = downloadBtn.querySelector('i');
+      
+      // Show downloading state
+      downloadBtn.classList.add('downloading');
+      icon.className = 'fas fa-spinner fa-spin';
+      
+      try {
+          // Collect all offline data
+          const offlineAccounts = await this.getAllOfflineAccounts();
+          const exportData = {
+              version: '1.0.0',
+              exportDate: new Date().toISOString(),
+              totalAccounts: offlineAccounts.length,
+              accounts: []
+          };
+
+          // Export each account with its emails
+          for (const account of offlineAccounts) {
+              const emails = await this.loadEmailsFromIndexedDB(account.email);
+              exportData.accounts.push({
+                  email: account.email,
+                  emailCount: emails.length,
+                  lastAccessed: account.last_accessed,
+                  emails: emails.map(email => ({
+                      id: email.id,
+                      from: email.from,
+                      subject: email.subject,
+                      content: email.content,
+                      time: email.time,
+                      read: email.read
+                  }))
+              });
+          }
+
+          // Create downloadable file
+          const dataStr = JSON.stringify(exportData, null, 2);
+          const dataBlob = new Blob([dataStr], { type: 'application/json' });
+          const url = URL.createObjectURL(dataBlob);
+          
+          // Create download link
+          const downloadLink = document.createElement('a');
+          downloadLink.href = url;
+          downloadLink.download = `yuen-dispo-mail-backup-${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          // Cleanup
+          URL.revokeObjectURL(url);
+          
+          this.showNotification(`💾 Downloaded backup with ${exportData.totalAccounts} accounts and ${exportData.accounts.reduce((total, acc) => total + acc.emailCount, 0)} emails`, 'success');
+          
+      } catch (error) {
+          console.error('Download failed:', error);
+          this.showNotification('❌ Download failed. Please try again.', 'error');
+      } finally {
+          // Reset button state
+          downloadBtn.classList.remove('downloading');
+          icon.className = 'fas fa-download';
+      }
+  }
+
   setupDomainSelect() {
       const domainSelect = document.getElementById('domainSelect');
       if (!domainSelect) {
@@ -482,6 +586,15 @@ class YuenDispoMail {
 
       document.getElementById('autoRefresh').addEventListener('change', (e) => {
           this.toggleAutoRefresh(e.target.checked);
+      });
+
+      // Add event listeners for new buttons
+      document.getElementById('offlineToggle').addEventListener('click', () => {
+          this.toggleOfflineMode();
+      });
+
+      document.getElementById('downloadBtn').addEventListener('click', () => {
+          this.downloadOfflineData();
       });
   }
 
@@ -665,8 +778,8 @@ class YuenDispoMail {
 
       console.log(`Attempting to fetch emails for ${this.currentEmail}`);
 
-      // If offline, show cached emails and simulate new ones occasionally
-      if (this.isOffline) {
+      // If offline (natural or forced), show cached emails and simulate new ones occasionally
+      if (this.isOffline || this.forceOfflineMode) {
           // Simulate receiving new emails occasionally in offline mode
           if (Math.random() > 0.7) { // 30% chance
               const newEmail = {
