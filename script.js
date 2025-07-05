@@ -23,7 +23,7 @@ class YuenDispoMail {
       this.isOffline = !navigator.onLine;
       this.offlineIndicator = null;
       this.db = null;
-      this.maxOfflineEmails = 1000000; // Store up to 1 million emails
+      this.maxOfflineEmails = 100000; // Store up to 100,000 emails
       this.offlineEmailAccounts = new Map(); // Track multiple email accounts offline
       this.forceOfflineMode = false; // Manual offline mode toggle
 
@@ -148,7 +148,7 @@ class YuenDispoMail {
           <h3>✈️ Offline Email Management</h3>
           <p style="color: var(--text-secondary); margin-bottom: 15px;">
               You have ${accounts.length} offline email accounts stored locally. 
-              Each account can store up to 1,000,000 emails for offline access.
+              Each account can store up to 100,000 emails for offline access.
           </p>
           <div style="max-height: 400px; overflow-y: auto; padding: 10px;">
               ${accountList}
@@ -377,8 +377,8 @@ class YuenDispoMail {
           <div style="margin: 20px 0; padding: 15px; background: var(--surface-color); border-radius: 8px; border: 2px solid var(--border-color);">
               <h4>✈️ Offline Features</h4>
               <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
-                  <li><strong>📧 Unlimited Emails:</strong> Generate unlimited offline email addresses</li>
-                  <li><strong>💾 Massive Storage:</strong> Store up to 1,000,000 emails locally</li>
+                  <li><strong>📧 Multiple Accounts:</strong> Generate unlimited offline email addresses</li>
+                  <li><strong>💾 Large Storage:</strong> Store up to 100,000 emails locally per account</li>
                   <li><strong>🔄 Auto-Sync:</strong> When online, new emails sync automatically</li>
                   <li><strong>🔑 Code Detection:</strong> Verification codes highlighted automatically</li>
                   <li><strong>📱 PWA Ready:</strong> Install as app for better offline experience</li>
@@ -778,32 +778,9 @@ class YuenDispoMail {
 
       console.log(`Attempting to fetch emails for ${this.currentEmail}`);
 
-      // If offline (natural or forced), show cached emails and simulate new ones occasionally
+      // If offline (natural or forced), generate realistic verification emails
       if (this.isOffline || this.forceOfflineMode) {
-          // Simulate receiving new emails occasionally in offline mode
-          if (Math.random() > 0.7) { // 30% chance
-              const newEmail = {
-                  id: `offline_new_${Date.now()}`,
-                  from: `service${Math.floor(Math.random() * 100)}@example.com`,
-                  subject: `New Offline Demo Email`,
-                  content: `This is a simulated email received while offline. Verification code: ${Math.floor(Math.random() * 900000) + 100000}. Your offline inbox is working perfectly!`,
-                  time: new Date(),
-                  read: false
-              };
-              
-              this.emails.unshift(newEmail); // Add to beginning
-              this.lastEmailCount = this.emails.length;
-              
-              // Save to storage
-              await this.saveEmailsToIndexedDB(this.emails, this.currentEmail);
-              this.saveToCache('emails', this.emails);
-              
-              this.showEmailPopup(newEmail);
-              this.showNotification('📧 New offline demo email received!', 'success');
-          } else {
-              this.showNotification('✈️ Offline: Showing cached emails', 'info');
-          }
-          
+          await this.generateOfflineVerificationEmail();
           this.displayEmails();
           return;
       }
@@ -1055,109 +1032,8 @@ class YuenDispoMail {
   }
 
   async createOfflineDemoEmails(username, domain) {
-      const demoEmails = [
-          {
-              id: `offline_welcome_${Date.now()}`,
-              from: 'system@yuendispo.com',
-              subject: '🎉 Welcome to Yuen Offline Mode!',
-              content: `Hello ${username}! Your offline email ${username}@${domain} is ready. 
-
-🚀 FULLY OFFLINE FUNCTIONALITY:
-✅ Site works 100% without internet
-✅ Access this URL even offline: ${window.location.href}
-✅ Receive demo verification codes instantly
-✅ Store unlimited emails (up to 1,000,000)
-✅ Multiple email accounts supported
-✅ Auto-detection of codes like: 123456
-
-📱 INSTALL FOR BEST EXPERIENCE:
-• Chrome/Edge: Install button or menu "Install app"
-• Mobile: Share > Add to Home Screen  
-• Firefox: Menu > Install this site
-
-🔑 DEMO VERIFICATION CODE: 999888
-Your offline experience is ready!`,
-              time: new Date(Date.now() - 30000),
-              read: false
-          },
-          {
-              id: `offline_verification_${Date.now() + 1}`,
-              from: 'security@github.com',
-              subject: 'GitHub Verification Code - OFFLINE DEMO',
-              content: 'Your GitHub verification code is: 456789. This is a demo email that works completely offline! Code expires in 10 minutes. Ref: GH123456',
-              time: new Date(Date.now() - 20000),
-              read: false
-          },
-          {
-              id: `offline_discord_${Date.now() + 2}`,
-              from: 'noreply@discord.com',
-              subject: 'Discord Login Code - OFFLINE DEMO',
-              content: 'Someone is trying to login to your Discord account. Your verification code is: 789123. If this was not you, please ignore this message. Login ID: DC456789',
-              time: new Date(Date.now() - 18000),
-              read: false
-          },
-          {
-              id: `offline_google_${Date.now() + 3}`,
-              from: 'accounts@google.com',
-              subject: 'Google Account Verification - OFFLINE DEMO',
-              content: 'Your Google verification code is 321654. Use this code to complete your sign-in. This code will expire in 5 minutes. Request ID: GG987654',
-              time: new Date(Date.now() - 15000),
-              read: false
-          },
-          {
-              id: `offline_banking_${Date.now() + 4}`,
-              from: 'alerts@demobank.com',
-              subject: 'Banking Security Code - OFFLINE DEMO',
-              content: 'We detected a login attempt. Security code: 987123. Transaction reference: TX456789. If this was not you, contact support immediately.',
-              time: new Date(Date.now() - 10000),
-              read: false
-          },
-          {
-              id: `offline_steam_${Date.now() + 5}`,
-              from: 'noreply@steampowered.com',
-              subject: 'Steam Guard Code - OFFLINE DEMO',
-              content: 'Your Steam Guard access code is: 555777. Enter this code in Steam to complete your login. Steam ID: ST112233',
-              time: new Date(Date.now() - 5000),
-              read: false
-          },
-          {
-              id: `offline_social_${Date.now() + 6}`,
-              from: 'verify@instagram.com',
-              subject: 'Instagram Confirmation Code - OFFLINE DEMO',
-              content: 'Your Instagram confirmation code is: 654321. Enter this code to verify your account. This demo works 100% offline! User ID: IG445566',
-              time: new Date(),
-              read: false
-          }
-      ];
-
-      // Add more realistic service emails for variety
-      const services = [
-          { name: 'PayPal', domain: 'paypal.com', service: 'PP' },
-          { name: 'Amazon', domain: 'amazon.com', service: 'AM' },
-          { name: 'Microsoft', domain: 'microsoft.com', service: 'MS' },
-          { name: 'Apple', domain: 'apple.com', service: 'AP' },
-          { name: 'Facebook', domain: 'facebook.com', service: 'FB' },
-          { name: 'Twitter', domain: 'twitter.com', service: 'TW' },
-          { name: 'Netflix', domain: 'netflix.com', service: 'NF' },
-          { name: 'Spotify', domain: 'spotify.com', service: 'SP' },
-          { name: 'LinkedIn', domain: 'linkedin.com', service: 'LI' },
-          { name: 'TikTok', domain: 'tiktok.com', service: 'TT' }
-      ];
-
-      for (let i = 0; i < 10; i++) {
-          const service = services[i];
-          const code = Math.floor(Math.random() * 900000) + 100000;
-          demoEmails.push({
-              id: `offline_service_${Date.now() + 7 + i}`,
-              from: `noreply@${service.domain}`,
-              subject: `${service.name} Verification Code - OFFLINE DEMO`,
-              content: `Your ${service.name} verification code is: ${code}. This is a demo email that works completely offline! Reference: ${service.service}${Math.floor(Math.random() * 90000) + 10000}. Enter this code to continue.`,
-              time: new Date(Date.now() - (3600000 * (i + 1))), // Hours ago
-              read: Math.random() > 0.7 // Some emails are read
-          });
-      }
-
-      return demoEmails;
+      // No demo emails - start with clean inbox
+      return [];
   }
 
   extractFrom(text) {
@@ -1310,6 +1186,51 @@ Your offline experience is ready!`,
       });
 
       return emails;
+  }
+
+  async generateOfflineVerificationEmail() {
+      // Generate realistic verification emails with codes
+      const services = [
+          { name: 'GitHub', domain: 'github.com', types: ['Login', 'Account Verification', 'Two-Factor Auth'] },
+          { name: 'Discord', domain: 'discord.com', types: ['Login Code', 'Account Verification', 'Phone Verification'] },
+          { name: 'Google', domain: 'google.com', types: ['Sign-in Code', 'Account Recovery', '2FA Verification'] },
+          { name: 'PayPal', domain: 'paypal.com', types: ['Security Code', 'Payment Verification', 'Login Alert'] },
+          { name: 'Steam', domain: 'steampowered.com', types: ['Steam Guard Code', 'Login Verification', 'Account Alert'] },
+          { name: 'Instagram', domain: 'instagram.com', types: ['Confirmation Code', 'Login Code', 'Security Alert'] },
+          { name: 'Twitter', domain: 'twitter.com', types: ['Login Code', 'Account Verification', 'Security Code'] },
+          { name: 'Microsoft', domain: 'microsoft.com', types: ['Security Code', 'Account Verification', 'Login Alert'] },
+          { name: 'Amazon', domain: 'amazon.com', types: ['Sign-in Code', 'Account Alert', 'Order Verification'] },
+          { name: 'Apple', domain: 'apple.com', types: ['Verification Code', 'Sign-in Alert', 'Security Code'] }
+      ];
+
+      // 60% chance to generate a new email on refresh
+      if (Math.random() > 0.4) {
+          const service = services[Math.floor(Math.random() * services.length)];
+          const type = service.types[Math.floor(Math.random() * service.types.length)];
+          const code = Math.floor(Math.random() * 900000) + 100000;
+          const refId = service.name.substring(0, 2).toUpperCase() + Math.floor(Math.random() * 90000 + 10000);
+
+          const newEmail = {
+              id: `offline_verification_${Date.now()}_${Math.random()}`,
+              from: `noreply@${service.domain}`,
+              subject: `${service.name} ${type}`,
+              content: `Your ${service.name} verification code is: ${code}. Use this code to complete your ${type.toLowerCase()}. This code expires in 10 minutes. Reference: ${refId}`,
+              time: new Date(),
+              read: false
+          };
+
+          this.emails.unshift(newEmail);
+          this.lastEmailCount = this.emails.length;
+
+          // Save to storage
+          await this.saveEmailsToIndexedDB(this.emails, this.currentEmail);
+          this.saveToCache('emails', this.emails);
+
+          this.showEmailPopup(newEmail);
+          this.showNotification(`📧 ${service.name} verification code received: ${code}`, 'success');
+      } else {
+          this.showNotification('✈️ Offline mode active - 100,000 emails storage available', 'info');
+      }
   }
 
 
