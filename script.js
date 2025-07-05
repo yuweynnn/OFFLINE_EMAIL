@@ -131,8 +131,16 @@ class YuenDispoMail {
           return;
       }
 
-      domainSelect.innerHTML = '<option value="">Select Domain</option>';
+      // Clear existing options first
+      domainSelect.innerHTML = '';
+      
+      // Add default option
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Select Domain';
+      domainSelect.appendChild(defaultOption);
 
+      // Add domain options
       this.domains.forEach(domain => {
           const option = document.createElement('option');
           option.value = domain;
@@ -141,6 +149,7 @@ class YuenDispoMail {
       });
 
       console.log('Domain select populated with:', this.domains);
+      console.log('Domain select options count:', domainSelect.children.length);
   }
 
   setupEventListeners() {
