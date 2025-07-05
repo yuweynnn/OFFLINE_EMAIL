@@ -412,6 +412,20 @@ class YuenDispoMail {
           return;
       }
 
+      // Force domains array to be populated
+      this.domains = [
+          'guerrillamail.com', 
+          'guerrillamail.org',
+          'guerrillamail.biz',
+          'guerrillamail.de',
+          'grr.la',
+          'guerrillamail.net',
+          'sharklasers.com',
+          'guerrillamail.info',
+          'harakirimail.com',
+          'getnada.com'
+      ];
+
       // Clear and rebuild options
       domainSelect.innerHTML = '';
       
@@ -419,45 +433,30 @@ class YuenDispoMail {
       const defaultOption = document.createElement('option');
       defaultOption.value = '';
       defaultOption.textContent = 'Select Domain';
+      defaultOption.style.color = '#ffffff';
+      defaultOption.style.backgroundColor = '#1a0a2e';
       domainSelect.appendChild(defaultOption);
-
-      // Ensure domains array exists and has values
-      if (!this.domains || this.domains.length === 0) {
-          this.domains = [
-              'guerrillamail.com', 
-              'guerrillamail.org',
-              'guerrillamail.biz',
-              'guerrillamail.de',
-              'grr.la',
-              'guerrillamail.net',
-              'sharklasers.com',
-              'guerrillamail.info',
-              'harakirimail.com',
-              'getnada.com'
-          ];
-      }
 
       // Add domain options
       this.domains.forEach((domain, index) => {
           const option = document.createElement('option');
           option.value = domain;
           option.textContent = `@${domain}`;
-          option.style.color = 'var(--text-primary)';
-          option.style.backgroundColor = 'var(--surface-color)';
+          option.style.color = '#ffffff';
+          option.style.backgroundColor = '#16213e';
           domainSelect.appendChild(option);
           console.log(`Added domain ${index + 1}: ${domain}`);
       });
 
-      // Style the select properly
-      domainSelect.style.color = 'var(--text-primary)';
-      domainSelect.style.backgroundColor = 'var(--background-color)';
-      domainSelect.style.border = '2px solid var(--border-color)';
+      // Force styling
+      domainSelect.style.color = '#ffffff';
+      domainSelect.style.backgroundColor = '#1a0a2e';
+      domainSelect.style.border = '2px solid #3d2a5d';
+      domainSelect.style.borderRadius = '8px';
+      domainSelect.style.padding = '8px 12px';
 
-      console.log(`Domain select populated with ${this.domains.length} domains:`, this.domains);
+      console.log(`Domain select populated with ${this.domains.length} domains`);
       console.log('Total options in select:', domainSelect.children.length);
-      
-      // Trigger a change event to ensure it's working
-      domainSelect.dispatchEvent(new Event('change'));
   }
 
   setupEventListeners() {
@@ -506,20 +505,21 @@ class YuenDispoMail {
   }
 
   applyTheme() {
-      const isDark = localStorage.getItem('darkMode') === 'true';
-      if (isDark) {
-          document.body.classList.add('dark-mode');
-          document.body.setAttribute('data-theme', 'dark');
-      } else {
-          document.body.classList.remove('dark-mode');
-          document.body.setAttribute('data-theme', 'light');
-      }
+      // Force purple theme by default
+      document.body.classList.remove('dark-mode');
+      document.body.setAttribute('data-theme', 'light');
+      document.body.style.background = 'linear-gradient(135deg, #1a0a2e, #16213e)';
+      
+      // Set default to light mode (purple theme)
+      localStorage.setItem('darkMode', 'false');
 
       // Update toggle icon
       const toggleIcon = document.querySelector('#darkModeToggle i');
       if (toggleIcon) {
-          toggleIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+          toggleIcon.className = 'fas fa-moon';
       }
+
+      console.log('Purple and black theme applied');
   }
 
   toggleTheme() {
@@ -1659,13 +1659,28 @@ if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.p
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, initializing Yuen Dispo Mail...');
   window.yuenDispoMail = new YuenDispoMail();
   
-  // Ensure domain select is working after full page load
+  // Multiple attempts to ensure domains are loaded
   setTimeout(() => {
       if (window.yuenDispoMail) {
           window.yuenDispoMail.setupDomainSelect();
-          console.log('Domain select re-initialized after page load');
+          console.log('Domain select initialized - attempt 1');
+      }
+  }, 100);
+
+  setTimeout(() => {
+      if (window.yuenDispoMail) {
+          window.yuenDispoMail.setupDomainSelect();
+          console.log('Domain select initialized - attempt 2');
       }
   }, 500);
+
+  setTimeout(() => {
+      if (window.yuenDispoMail) {
+          window.yuenDispoMail.setupDomainSelect();
+          console.log('Domain select initialized - attempt 3');
+      }
+  }, 1000);
 });
