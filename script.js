@@ -20,6 +20,8 @@ class YuenDispoMail {
           mailslurp: localStorage.getItem('mailslurp_api_key') || ''
       };
       this.mailslurpInboxes = new Map();
+      this.isOffline = !navigator.onLine;
+      this.offlineIndicator = null;
 
       this.init();
   }
@@ -31,11 +33,94 @@ class YuenDispoMail {
       this.setupAutoRefresh();
       this.applyTheme();
       this.requestNotificationPermission();
+      this.setupOfflineHandling();
+      this.loadCachedData();
   }
 
   async requestNotificationPermission() {
       if ('Notification' in window && Notification.permission === 'default') {
           await Notification.requestPermission();
+      }
+  }
+
+  setupOfflineHandling() {
+      // Handle online/offline events
+      window.addEventListener('online', () => {
+          this.isOffline = false;
+          this.hideOfflineIndicator();
+          this.showNotification('Connection restored! Syncing emails...', 'success');
+          if (this.currentEmail) {
+              this.refreshEmails();
+          }
+      });
+
+      window.addEventListener('offline', () => {
+          this.isOffline = true;
+          this.showOfflineIndicator();
+          this.showNotification('You are offline. Cached emails are still available.', 'warning');
+      });
+
+      // Show offline indicator if starting offline
+      if (this.isOffline) {
+          this.showOfflineIndicator();
+      }
+  }
+
+  showOfflineIndicator() {
+      if (this.offlineIndicator) return;
+      
+      this.offlineIndicator = document.createElement('div');
+      this.offlineIndicator.className = 'offline-indicator';
+      this.offlineIndicator.innerHTML = '📡 Offline Mode - Using cached data';
+      document.body.appendChild(this.offlineIndicator);
+  }
+
+  hideOfflineIndicator() {
+      if (this.offlineIndicator) {
+          this.offlineIndicator.remove();
+          this.offlineIndicator = null;
+      }
+  }
+
+  saveToCache(key, data) {
+      try {
+          localStorage.setItem(`yuen_dispo_${key}`, JSON.stringify(data));
+      } catch (error) {
+          console.error('Failed to save to cache:', error);
+      }
+  }
+
+  loadFromCache(key) {
+      try {
+          const data = localStorage.getItem(`yuen_dispo_${key}`);
+          return data ? JSON.parse(data) : null;
+      } catch (error) {
+          console.error('Failed to load from cache:', error);
+          return null;
+      }
+  }
+
+  loadCachedData() {
+      // Load cached current email
+      const cachedEmail = this.loadFromCache('current_email');
+      if (cachedEmail) {
+          this.currentEmail = cachedEmail;
+          this.displayCurrentEmail(cachedEmail);
+      }
+
+      // Load cached emails
+      const cachedEmails = this.loadFromCache('emails');
+      if (cachedEmails && cachedEmails.length > 0) {
+          this.emails = cachedEmails.map(email => ({
+              ...email,
+              time: new Date(email.time) // Convert time back to Date object
+          }));
+          this.lastEmailCount = this.emails.length;
+          this.displayEmails();
+          
+          if (this.isOffline) {
+              this.showNotification(`Loaded ${this.emails.length} cached emails`, 'info');
+          }
       }
   }
 
@@ -244,6 +329,13 @@ class YuenDispoMail {
 
       console.log(`Attempting to fetch emails for ${this.currentEmail}`);
 
+      // If offline, show cached emails
+      if (this.isOffline) {
+          this.showNotification('Offline: Showing cached emails', 'info');
+          this.displayEmails();
+          return;
+      }
+
       try {
           const domain = this.currentEmail.split('@')[1];
           const username = this.currentEmail.split('@')[0];
@@ -273,11 +365,24 @@ class YuenDispoMail {
 
           this.emails = emails;
           this.lastEmailCount = emails.length;
+          
+          // Cache the emails for offline use
+          this.saveToCache('emails', this.emails);
+          this.saveToCache('current_email', this.currentEmail);
+          this.saveToCache('last_update', new Date().toISOString());
+          
           this.displayEmails();
 
       } catch (error) {
           console.error('Error fetching emails:', error);
-          this.showNotification('Error fetching emails', 'error');
+          
+          // If network error and we have cached emails, show them
+          if (this.emails.length > 0) {
+              this.showNotification('Network error: Showing cached emails', 'warning');
+              this.displayEmails();
+          } else {
+              this.showNotification('Error fetching emails and no cached data available', 'error');
+          }
       }
   }
 
@@ -1059,6 +1164,78 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered successfully:', registration.scope);
+        
+        // Check for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New version available
+              if (confirm('A new version is available. Reload to update?')) {
+                window.location.reload();
+              }
+            }
+          });
+        });
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
+
+// Install prompt for PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('Install prompt available');
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Show install button after app loads
+  setTimeout(() => {
+    if (deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+      showInstallPrompt();
+    }
+  }, 5000);
+});
+
+function showInstallPrompt() {
+  const installBanner = document.createElement('div');
+  installBanner.className = 'install-banner';
+  installBanner.innerHTML = `
+    <div class="install-content">
+      <span>📱 Install Yuen Dispo Mail for offline access</span>
+      <button onclick="installApp()" class="btn primary">Install</button>
+      <button onclick="this.parentElement.parentElement.remove()" class="btn secondary">Later</button>
+    </div>
+  `;
+  document.body.appendChild(installBanner);
+}
+
+async function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('Install prompt result:', outcome);
+    deferredPrompt = null;
+    document.querySelector('.install-banner')?.remove();
+  }
+}
+
+// Background sync for offline email checking
+if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+  navigator.serviceWorker.ready.then((registration) => {
+    // Register background sync
+    registration.sync.register('background-email-sync');
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   window.yuenDispoMail = new YuenDispoMail();

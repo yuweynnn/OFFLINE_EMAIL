@@ -1,0 +1,25 @@
+
+{
+  "name": "Yuen Disposable Email",
+  "short_name": "Yuen Dispo",
+  "description": "Free disposable email generator and inbox viewer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#8a2be2",
+  "theme_color": "#8a2be2",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiM4YTJiZTIiLz4KPHBhdGggZD0iTTQ4IDYwSDE0NFY3Mkg0OFY2MFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik00OCA4NEgxNDRWMTMySDQ4Vjg0WiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjgpIi8+CjxjaXJjbGUgY3g9IjE0NCIgY3k9IjQ4IiByPSI4IiBmaWxsPSIjZmY0NTNhIi8+Cjx0ZXh0IHg9Ijk2IiB5PSIxNjAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+WUVVRU48L3RleHQ+CjwvcnZnPgo=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9IiM4YTJiZTIiLz4KPHBhdGggZD0iTTEyOCAxNjBIMzg0VjE5Mkg1MTJWMTYwWiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEyOCAyMjRIMzg0VjM1MkgxMjhWMjI0WiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjgpIi8+CjxjaXJjbGUgY3g9IjM4NCIgY3k9IjEyOCIgcj0iMjQiIGZpbGw9IiNmZjQ1M2EiLz4KPHRleHQgeD0iMjU2IiB5PSI0MzIiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjM2IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+WUVVRU48L3RleHQ+Cjwvc3ZnPgo=",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}
