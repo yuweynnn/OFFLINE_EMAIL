@@ -5,15 +5,15 @@ class YuenDispoMail {
       this.autoRefreshInterval = null;
       this.domains = [
           'guerrillamail.com', 
-          'harakirimail.com',
           'guerrillamail.org',
           'guerrillamail.biz',
-          'guerrillamailblock.com',
           'guerrillamail.de',
           'grr.la',
           'guerrillamail.net',
           'sharklasers.com',
           'guerrillamail.info',
+          'harakirimail.com',
+          'getnada.com'
       ];
       this.lastEmailCount = 0;
       this.apiKeys = {
@@ -346,6 +346,61 @@ class YuenDispoMail {
       }
   }
 
+  showOfflineTutorial() {
+      const modal = document.getElementById('emailModal');
+      const content = document.getElementById('emailContent');
+      
+      content.innerHTML = `
+          <h3>📱 How to Use Yuen Dispo Mail Offline</h3>
+          
+          <div style="margin: 20px 0; padding: 15px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 8px; color: white;">
+              <h4>🚀 Quick Start</h4>
+              <ol style="margin: 10px 0; padding-left: 20px;">
+                  <li>Select a domain from the dropdown</li>
+                  <li>Click "Generate Email" to create your offline email</li>
+                  <li>Receive demo emails instantly (even without internet!)</li>
+                  <li>All verification codes are auto-detected</li>
+              </ol>
+          </div>
+
+          <div style="margin: 20px 0; padding: 15px; background: var(--surface-color); border-radius: 8px; border: 2px solid var(--border-color);">
+              <h4>✈️ Offline Features</h4>
+              <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                  <li><strong>📧 Unlimited Emails:</strong> Generate unlimited offline email addresses</li>
+                  <li><strong>💾 Massive Storage:</strong> Store up to 1,000,000 emails locally</li>
+                  <li><strong>🔄 Auto-Sync:</strong> When online, new emails sync automatically</li>
+                  <li><strong>🔑 Code Detection:</strong> Verification codes highlighted automatically</li>
+                  <li><strong>📱 PWA Ready:</strong> Install as app for better offline experience</li>
+              </ul>
+          </div>
+
+          <div style="margin: 20px 0; padding: 15px; background: var(--accent-color); border-radius: 8px; color: white;">
+              <h4>📱 Install as App (Recommended)</h4>
+              <p>For the best offline experience:</p>
+              <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li><strong>Chrome/Edge:</strong> Look for install prompt or menu > "Install Yuen Dispo Mail"</li>
+                  <li><strong>Mobile:</strong> Tap share button > "Add to Home Screen"</li>
+                  <li><strong>Firefox:</strong> Menu > "Install this site as an app"</li>
+              </ul>
+          </div>
+
+          <div style="margin: 20px 0; padding: 15px; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
+              <h4>💡 Pro Tips</h4>
+              <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                  <li>Click the ✈️ offline indicator to switch between accounts</li>
+                  <li>Verification codes are clickable - tap to copy</li>
+                  <li>Auto-refresh is enabled by default when online</li>
+                  <li>Dark mode toggle available (moon/sun icon)</li>
+                  <li>All data is stored securely in your browser</li>
+              </ul>
+          </div>
+
+          <button onclick="window.yuenDispoMail.closeModal()" class="btn primary" style="margin-top: 20px;">Got it! Let's start coding emails 🚀</button>
+      `;
+      
+      modal.style.display = 'block';
+  }
+
   setupDomainSelect() {
       const domainSelect = document.getElementById('domainSelect');
       if (!domainSelect) {
@@ -369,6 +424,11 @@ class YuenDispoMail {
           option.textContent = `@${domain}`;
           domainSelect.appendChild(option);
       });
+
+      // Force refresh the select element
+      domainSelect.style.display = 'none';
+      domainSelect.offsetHeight; // Force reflow
+      domainSelect.style.display = '';
 
       console.log('Domain select populated with:', this.domains);
       console.log('Domain select options count:', domainSelect.children.length);
@@ -860,8 +920,18 @@ class YuenDispoMail {
           {
               id: `offline_welcome_${Date.now()}`,
               from: 'system@yuendispo.com',
-              subject: '🎉 Welcome to Offline Mode!',
-              content: `Hello ${username}! Your offline email ${username}@${domain} is ready. This demo shows how emails appear. Verification codes like 123456 and ABC789 will be automatically detected. Your emails are stored locally for offline access.`,
+              subject: '🎉 Welcome to Yuen Offline Mode!',
+              content: `Hello ${username}! Your offline email ${username}@${domain} is ready. 
+
+HOW TO USE OFFLINE:
+📱 Install as PWA: Click install prompt or add to home screen
+✈️ Works completely offline - no internet needed
+💾 Stores up to 1,000,000 emails locally
+🔄 Auto-syncs when back online
+📧 Generate unlimited offline emails
+🔑 Auto-detects verification codes like 123456
+
+Your emails are stored securely in your browser's IndexedDB. Even if you clear cache, they'll remain unless you specifically clear site data.`,
               time: new Date(Date.now() - 30000),
               read: false
           },

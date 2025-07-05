@@ -1,27 +1,27 @@
 :root {
-  /* Light theme colors */
-  --background-color: #ffffff;
-  --surface-color: #ffffff;
+  /* Purple and Black theme */
+  --background-color: #1a0a2e;
+  --surface-color: #16213e;
   --primary-color: #8a2be2;
-  --secondary-color: #6a0dad;
-  --accent-color: #9932cc;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --border-color: #e0e0e0;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --success-color: #28a745;
-  --error-color: #dc3545;
-  --warning-color: #ffc107;
-  --info-color: #17a2b8;
+  --secondary-color: #9b59b6;
+  --accent-color: #e74c3c;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --border-color: #3d2a5d;
+  --shadow: 0 4px 15px rgba(138, 43, 226, 0.3);
+  --success-color: #27ae60;
+  --error-color: #e74c3c;
+  --warning-color: #f39c12;
+  --info-color: #3498db;
 }
 
 [data-theme="dark"], .dark-mode {
-  /* Dark theme colors - Black and Purple */
-  --background-color: #0f0f0f;
-  --surface-color: #1a0d1a;
+  /* Dark Purple theme */
+  --background-color: #0f0515;
+  --surface-color: #1a0d2e;
   --primary-color: #9d4edd;
   --secondary-color: #c77dff;
-  --accent-color: #e0aaff;
+  --accent-color: #ff6b6b;
   --text-primary: #ffffff;
   --text-secondary: #cccccc;
   --border-color: #4a1a4a;
@@ -45,6 +45,7 @@ body {
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
+  background-attachment: fixed;
 }
 
 .container {
@@ -75,10 +76,9 @@ header p {
   opacity: 0.9;
 }
 
-.dark-mode-btn {
+.dark-mode-btn, .tutorial-btn {
   position: absolute;
   top: 20px;
-  right: 20px;
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
@@ -89,7 +89,15 @@ header p {
   transition: background-color 0.3s ease;
 }
 
-.dark-mode-btn:hover {
+.dark-mode-btn {
+  right: 20px;
+}
+
+.tutorial-btn {
+  right: 70px;
+}
+
+.dark-mode-btn:hover, .tutorial-btn:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
