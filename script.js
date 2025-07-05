@@ -31,7 +31,6 @@ class YuenDispoMail {
 
   init() {
       this.initIndexedDB();
-      this.setupDomainSelect();
       this.setupEventListeners();
       this.setupModal();
       this.setupAutoRefresh();
@@ -39,6 +38,11 @@ class YuenDispoMail {
       this.requestNotificationPermission();
       this.setupOfflineHandling();
       this.loadCachedData();
+      
+      // Setup domains after a short delay to ensure DOM is ready
+      setTimeout(() => {
+          this.setupDomainSelect();
+      }, 100);
   }
 
   async initIndexedDB() {
@@ -408,7 +412,7 @@ class YuenDispoMail {
           return;
       }
 
-      // Clear existing options first
+      // Clear and rebuild options
       domainSelect.innerHTML = '';
       
       // Add default option
@@ -417,21 +421,43 @@ class YuenDispoMail {
       defaultOption.textContent = 'Select Domain';
       domainSelect.appendChild(defaultOption);
 
+      // Ensure domains array exists and has values
+      if (!this.domains || this.domains.length === 0) {
+          this.domains = [
+              'guerrillamail.com', 
+              'guerrillamail.org',
+              'guerrillamail.biz',
+              'guerrillamail.de',
+              'grr.la',
+              'guerrillamail.net',
+              'sharklasers.com',
+              'guerrillamail.info',
+              'harakirimail.com',
+              'getnada.com'
+          ];
+      }
+
       // Add domain options
-      this.domains.forEach(domain => {
+      this.domains.forEach((domain, index) => {
           const option = document.createElement('option');
           option.value = domain;
           option.textContent = `@${domain}`;
+          option.style.color = 'var(--text-primary)';
+          option.style.backgroundColor = 'var(--surface-color)';
           domainSelect.appendChild(option);
+          console.log(`Added domain ${index + 1}: ${domain}`);
       });
 
-      // Force refresh the select element
-      domainSelect.style.display = 'none';
-      domainSelect.offsetHeight; // Force reflow
-      domainSelect.style.display = '';
+      // Style the select properly
+      domainSelect.style.color = 'var(--text-primary)';
+      domainSelect.style.backgroundColor = 'var(--background-color)';
+      domainSelect.style.border = '2px solid var(--border-color)';
 
-      console.log('Domain select populated with:', this.domains);
-      console.log('Domain select options count:', domainSelect.children.length);
+      console.log(`Domain select populated with ${this.domains.length} domains:`, this.domains);
+      console.log('Total options in select:', domainSelect.children.length);
+      
+      // Trigger a change event to ensure it's working
+      domainSelect.dispatchEvent(new Event('change'));
   }
 
   setupEventListeners() {
@@ -1634,4 +1660,12 @@ if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.p
 
 document.addEventListener('DOMContentLoaded', () => {
   window.yuenDispoMail = new YuenDispoMail();
+  
+  // Ensure domain select is working after full page load
+  setTimeout(() => {
+      if (window.yuenDispoMail) {
+          window.yuenDispoMail.setupDomainSelect();
+          console.log('Domain select re-initialized after page load');
+      }
+  }, 500);
 });
