@@ -111,7 +111,7 @@ class YuenDispoMail {
       
       this.offlineIndicator = document.createElement('div');
       this.offlineIndicator.className = 'offline-indicator';
-      this.offlineIndicator.innerHTML = '📡 Offline Mode - Click to switch between stored email accounts';
+      this.offlineIndicator.innerHTML = '✈️ OFFLINE MODE - Full functionality available | Click to manage accounts';
       this.offlineIndicator.style.cursor = 'pointer';
       this.offlineIndicator.onclick = () => this.showOfflineAccountSwitcher();
       document.body.appendChild(this.offlineIndicator);
@@ -119,29 +119,33 @@ class YuenDispoMail {
 
   async showOfflineAccountSwitcher() {
       const accounts = await this.getAllOfflineAccounts();
-      if (accounts.length === 0) {
-          this.showNotification('No offline email accounts available', 'warning');
-          return;
-      }
-
-      const accountList = accounts.map(acc => 
-          `<div style="padding: 10px; border: 1px solid var(--border-color); margin: 5px; cursor: pointer; border-radius: 5px;" 
+      
+      const accountList = accounts.length > 0 ? accounts.map(acc => 
+          `<div style="padding: 12px; border: 2px solid var(--border-color); margin: 8px; cursor: pointer; border-radius: 8px; background: var(--surface-color); transition: all 0.3s ease;" 
+                onmouseover="this.style.borderColor='var(--primary-color)'" 
+                onmouseout="this.style.borderColor='var(--border-color)'"
                 onclick="window.yuenDispoMail.switchToOfflineAccount('${acc.email}')">
-              <strong>${acc.email}</strong><br>
-              <small>${acc.email_count} emails • Last accessed: ${new Date(acc.last_accessed).toLocaleDateString()}</small>
+              <strong style="color: var(--primary-color);">📧 ${acc.email}</strong><br>
+              <small style="color: var(--text-secondary);">${acc.email_count} emails • Last accessed: ${new Date(acc.last_accessed).toLocaleDateString()}</small>
           </div>`
-      ).join('');
+      ).join('') : '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No offline accounts yet. Generate an email to create your first offline account!</div>';
 
       const modal = document.getElementById('emailModal');
       const content = document.getElementById('emailContent');
       
       content.innerHTML = `
-          <h3>📡 Offline Email Accounts</h3>
-          <p>Switch between your stored offline email accounts:</p>
-          <div style="max-height: 400px; overflow-y: auto;">
+          <h3>✈️ Offline Email Management</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 15px;">
+              You have ${accounts.length} offline email accounts stored locally. 
+              Each account can store up to 1,000,000 emails for offline access.
+          </p>
+          <div style="max-height: 400px; overflow-y: auto; padding: 10px;">
               ${accountList}
           </div>
-          <button onclick="window.yuenDispoMail.closeModal()" class="btn primary" style="margin-top: 15px;">Close</button>
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+              <button onclick="window.yuenDispoMail.generateEmail()" class="btn primary" style="margin-right: 10px;">+ Generate New Account</button>
+              <button onclick="window.yuenDispoMail.closeModal()" class="btn secondary">Close</button>
+          </div>
       `;
       
       modal.style.display = 'block';
@@ -481,7 +485,26 @@ class YuenDispoMail {
           const username = this.generateRandomUsername();
           let email = `${username}@${selectedDomain}`;
 
-          // Original logic for all services
+          // If offline, create a demo inbox with sample emails
+          if (this.isOffline) {
+              this.currentEmail = email;
+              this.displayCurrentEmail(email);
+              
+              // Create demo emails for offline use
+              this.emails = await this.createOfflineDemoEmails(username, selectedDomain);
+              this.lastEmailCount = this.emails.length;
+              
+              // Save to offline storage
+              await this.saveEmailsToIndexedDB(this.emails, email);
+              this.saveToCache('current_email', email);
+              this.saveToCache('emails', this.emails);
+              
+              this.displayEmails();
+              this.showNotification(`✈️ Offline email generated: ${email} with demo emails`, 'success');
+              return;
+          }
+
+          // Online logic
           await this.preRegisterEmail(username, selectedDomain);
           this.currentEmail = email;
           this.displayCurrentEmail(email);
@@ -556,9 +579,32 @@ class YuenDispoMail {
 
       console.log(`Attempting to fetch emails for ${this.currentEmail}`);
 
-      // If offline, show cached emails
+      // If offline, show cached emails and simulate new ones occasionally
       if (this.isOffline) {
-          this.showNotification('Offline: Showing cached emails', 'info');
+          // Simulate receiving new emails occasionally in offline mode
+          if (Math.random() > 0.7) { // 30% chance
+              const newEmail = {
+                  id: `offline_new_${Date.now()}`,
+                  from: `service${Math.floor(Math.random() * 100)}@example.com`,
+                  subject: `New Offline Demo Email`,
+                  content: `This is a simulated email received while offline. Verification code: ${Math.floor(Math.random() * 900000) + 100000}. Your offline inbox is working perfectly!`,
+                  time: new Date(),
+                  read: false
+              };
+              
+              this.emails.unshift(newEmail); // Add to beginning
+              this.lastEmailCount = this.emails.length;
+              
+              // Save to storage
+              await this.saveEmailsToIndexedDB(this.emails, this.currentEmail);
+              this.saveToCache('emails', this.emails);
+              
+              this.showEmailPopup(newEmail);
+              this.showNotification('📧 New offline demo email received!', 'success');
+          } else {
+              this.showNotification('✈️ Offline: Showing cached emails', 'info');
+          }
+          
           this.displayEmails();
           return;
       }
@@ -809,17 +855,63 @@ class YuenDispoMail {
       return processedEmails;
   }
 
-  createDemoEmails(username, domain) {
-      return [
+  async createOfflineDemoEmails(username, domain) {
+      const demoEmails = [
           {
-              id: `demo_${domain}_${Date.now()}`,
-              from: `service@${domain}`,
-              subject: `${domain} Service Active`,
-              content: `${domain} inbox for ${username} is being monitored. Real emails will appear here when received. The service is working properly.`,
+              id: `offline_welcome_${Date.now()}`,
+              from: 'system@yuendispo.com',
+              subject: '🎉 Welcome to Offline Mode!',
+              content: `Hello ${username}! Your offline email ${username}@${domain} is ready. This demo shows how emails appear. Verification codes like 123456 and ABC789 will be automatically detected. Your emails are stored locally for offline access.`,
+              time: new Date(Date.now() - 30000),
+              read: false
+          },
+          {
+              id: `offline_verification_${Date.now() + 1}`,
+              from: 'security@example.com',
+              subject: 'Your Verification Code',
+              content: 'Your verification code is: 456789. Please enter this code to complete your account setup. This code will expire in 10 minutes. Thank you for using our service.',
+              time: new Date(Date.now() - 20000),
+              read: false
+          },
+          {
+              id: `offline_newsletter_${Date.now() + 2}`,
+              from: 'newsletter@techcompany.com',
+              subject: 'Weekly Tech Newsletter',
+              content: 'Welcome to our weekly newsletter! This week: New JavaScript frameworks, AI developments, and cloud computing trends. Your subscriber ID is: TN789456. Stay updated with the latest in technology.',
+              time: new Date(Date.now() - 10000),
+              read: false
+          },
+          {
+              id: `offline_banking_${Date.now() + 3}`,
+              from: 'alerts@demobank.com',
+              subject: 'Login Alert - Security Code Required',
+              content: 'We detected a login attempt. If this was you, use security code 987123 to proceed. If not, please contact support immediately. Transaction ref: TX456789.',
+              time: new Date(Date.now() - 5000),
+              read: false
+          },
+          {
+              id: `offline_social_${Date.now() + 4}`,
+              from: 'verify@socialmedia.com',
+              subject: 'Confirm Your Account',
+              content: 'Please confirm your account by entering this 6-digit code: 654321. Your account will be activated once verified. Welcome to our platform!',
               time: new Date(),
               read: false
           }
       ];
+
+      // Add some older emails for variety
+      for (let i = 0; i < 10; i++) {
+          demoEmails.push({
+              id: `offline_old_${Date.now() + 5 + i}`,
+              from: `service${i}@example.com`,
+              subject: `Demo Email #${i + 1}`,
+              content: `This is demo email #${i + 1}. Code: ${Math.floor(Math.random() * 900000) + 100000}. These emails demonstrate offline functionality and code detection.`,
+              time: new Date(Date.now() - (3600000 * (i + 1))), // Hours ago
+              read: Math.random() > 0.7 // Some emails are read
+          });
+      }
+
+      return demoEmails;
   }
 
   extractFrom(text) {
