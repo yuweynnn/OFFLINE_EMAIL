@@ -5,8 +5,10 @@
   "description": "Free disposable email generator and inbox viewer",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#8a2be2",
+  "background_color": "#1a0a2e",
   "theme_color": "#8a2be2",
+  "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiM4YTJiZTIiLz4KPHBhdGggZD0iTTQ4IDYwSDE0NFY3Mkg0OFY2MFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik00OCA4NEgxNDRWMTMySDQ4Vjg0WiIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjgpIi8+CjxjaXJjbGUgY3g9IjE0NCIgY3k9IjQ4IiByPSI4IiBmaWxsPSIjZmY0NTNhIi8+Cjx0ZXh0IHg9Ijk2IiB5PSIxNjAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0ic3lzdGVtLXVpIiBmb250LXNpemU9IjE0IiBmb250LXdlaWdodD0iYm9sZCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+WUVVRU48L3RleHQ+CjwvcnZnPgo=",

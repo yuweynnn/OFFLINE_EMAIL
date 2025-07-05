@@ -1,13 +1,37 @@
 
-const CACHE_NAME = 'yuen-dispo-mail-v1.0.0';
+const CACHE_NAME = 'yuen-dispo-mail-v1.0.1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/style.css',
   '/script.js',
   '/manifest.json',
+  '/sw.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
+
+// Offline fallback for Font Awesome
+const FONT_AWESOME_FALLBACK = `
+<style>
+.fas::before, .fa::before { 
+  font-family: Arial, sans-serif !important; 
+  font-weight: bold !important;
+}
+.fa-envelope::before { content: "📧"; }
+.fa-moon::before { content: "🌙"; }
+.fa-sun::before { content: "☀️"; }
+.fa-wifi::before { content: "📶"; }
+.fa-wifi-slash::before { content: "📵"; }
+.fa-download::before { content: "⬇️"; }
+.fa-question-circle::before { content: "❓"; }
+.fa-plus::before { content: "+"; }
+.fa-sync-alt::before { content: "🔄"; }
+.fa-copy::before { content: "📋"; }
+.fa-search::before { content: "🔍"; }
+.fa-spinner::before { content: "⏳"; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+`;
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -67,6 +91,42 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // Handle Font Awesome fallback when offline
+  if (request.url.includes('font-awesome') || request.url.includes('cdnjs.cloudflare.com')) {
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          return fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                const responseClone = networkResponse.clone();
+                caches.open(CACHE_NAME)
+                  .then((cache) => {
+                    cache.put(request, responseClone);
+                  });
+              }
+              return networkResponse;
+            })
+            .catch(() => {
+              // Return fallback Font Awesome CSS
+              return new Response(FONT_AWESOME_FALLBACK, {
+                headers: { 'Content-Type': 'text/css' }
+              });
+            });
+        })
+        .catch(() => {
+          return new Response(FONT_AWESOME_FALLBACK, {
+            headers: { 'Content-Type': 'text/css' }
+          });
         })
     );
     return;

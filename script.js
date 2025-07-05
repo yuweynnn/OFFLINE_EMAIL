@@ -1062,59 +1062,96 @@ class YuenDispoMail {
               subject: '🎉 Welcome to Yuen Offline Mode!',
               content: `Hello ${username}! Your offline email ${username}@${domain} is ready. 
 
-HOW TO USE OFFLINE:
-📱 Install as PWA: Click install prompt or add to home screen
-✈️ Works completely offline - no internet needed
-💾 Stores up to 1,000,000 emails locally
-🔄 Auto-syncs when back online
-📧 Generate unlimited offline emails
-🔑 Auto-detects verification codes like 123456
+🚀 FULLY OFFLINE FUNCTIONALITY:
+✅ Site works 100% without internet
+✅ Access this URL even offline: ${window.location.href}
+✅ Receive demo verification codes instantly
+✅ Store unlimited emails (up to 1,000,000)
+✅ Multiple email accounts supported
+✅ Auto-detection of codes like: 123456
 
-Your emails are stored securely in your browser's IndexedDB. Even if you clear cache, they'll remain unless you specifically clear site data.`,
+📱 INSTALL FOR BEST EXPERIENCE:
+• Chrome/Edge: Install button or menu "Install app"
+• Mobile: Share > Add to Home Screen  
+• Firefox: Menu > Install this site
+
+🔑 DEMO VERIFICATION CODE: 999888
+Your offline experience is ready!`,
               time: new Date(Date.now() - 30000),
               read: false
           },
           {
               id: `offline_verification_${Date.now() + 1}`,
-              from: 'security@example.com',
-              subject: 'Your Verification Code',
-              content: 'Your verification code is: 456789. Please enter this code to complete your account setup. This code will expire in 10 minutes. Thank you for using our service.',
+              from: 'security@github.com',
+              subject: 'GitHub Verification Code - OFFLINE DEMO',
+              content: 'Your GitHub verification code is: 456789. This is a demo email that works completely offline! Code expires in 10 minutes. Ref: GH123456',
               time: new Date(Date.now() - 20000),
               read: false
           },
           {
-              id: `offline_newsletter_${Date.now() + 2}`,
-              from: 'newsletter@techcompany.com',
-              subject: 'Weekly Tech Newsletter',
-              content: 'Welcome to our weekly newsletter! This week: New JavaScript frameworks, AI developments, and cloud computing trends. Your subscriber ID is: TN789456. Stay updated with the latest in technology.',
+              id: `offline_discord_${Date.now() + 2}`,
+              from: 'noreply@discord.com',
+              subject: 'Discord Login Code - OFFLINE DEMO',
+              content: 'Someone is trying to login to your Discord account. Your verification code is: 789123. If this was not you, please ignore this message. Login ID: DC456789',
+              time: new Date(Date.now() - 18000),
+              read: false
+          },
+          {
+              id: `offline_google_${Date.now() + 3}`,
+              from: 'accounts@google.com',
+              subject: 'Google Account Verification - OFFLINE DEMO',
+              content: 'Your Google verification code is 321654. Use this code to complete your sign-in. This code will expire in 5 minutes. Request ID: GG987654',
+              time: new Date(Date.now() - 15000),
+              read: false
+          },
+          {
+              id: `offline_banking_${Date.now() + 4}`,
+              from: 'alerts@demobank.com',
+              subject: 'Banking Security Code - OFFLINE DEMO',
+              content: 'We detected a login attempt. Security code: 987123. Transaction reference: TX456789. If this was not you, contact support immediately.',
               time: new Date(Date.now() - 10000),
               read: false
           },
           {
-              id: `offline_banking_${Date.now() + 3}`,
-              from: 'alerts@demobank.com',
-              subject: 'Login Alert - Security Code Required',
-              content: 'We detected a login attempt. If this was you, use security code 987123 to proceed. If not, please contact support immediately. Transaction ref: TX456789.',
+              id: `offline_steam_${Date.now() + 5}`,
+              from: 'noreply@steampowered.com',
+              subject: 'Steam Guard Code - OFFLINE DEMO',
+              content: 'Your Steam Guard access code is: 555777. Enter this code in Steam to complete your login. Steam ID: ST112233',
               time: new Date(Date.now() - 5000),
               read: false
           },
           {
-              id: `offline_social_${Date.now() + 4}`,
-              from: 'verify@socialmedia.com',
-              subject: 'Confirm Your Account',
-              content: 'Please confirm your account by entering this 6-digit code: 654321. Your account will be activated once verified. Welcome to our platform!',
+              id: `offline_social_${Date.now() + 6}`,
+              from: 'verify@instagram.com',
+              subject: 'Instagram Confirmation Code - OFFLINE DEMO',
+              content: 'Your Instagram confirmation code is: 654321. Enter this code to verify your account. This demo works 100% offline! User ID: IG445566',
               time: new Date(),
               read: false
           }
       ];
 
-      // Add some older emails for variety
+      // Add more realistic service emails for variety
+      const services = [
+          { name: 'PayPal', domain: 'paypal.com', service: 'PP' },
+          { name: 'Amazon', domain: 'amazon.com', service: 'AM' },
+          { name: 'Microsoft', domain: 'microsoft.com', service: 'MS' },
+          { name: 'Apple', domain: 'apple.com', service: 'AP' },
+          { name: 'Facebook', domain: 'facebook.com', service: 'FB' },
+          { name: 'Twitter', domain: 'twitter.com', service: 'TW' },
+          { name: 'Netflix', domain: 'netflix.com', service: 'NF' },
+          { name: 'Spotify', domain: 'spotify.com', service: 'SP' },
+          { name: 'LinkedIn', domain: 'linkedin.com', service: 'LI' },
+          { name: 'TikTok', domain: 'tiktok.com', service: 'TT' }
+      ];
+
       for (let i = 0; i < 10; i++) {
+          const service = services[i];
+          const code = Math.floor(Math.random() * 900000) + 100000;
           demoEmails.push({
-              id: `offline_old_${Date.now() + 5 + i}`,
-              from: `service${i}@example.com`,
-              subject: `Demo Email #${i + 1}`,
-              content: `This is demo email #${i + 1}. Code: ${Math.floor(Math.random() * 900000) + 100000}. These emails demonstrate offline functionality and code detection.`,
+              id: `offline_service_${Date.now() + 7 + i}`,
+              from: `noreply@${service.domain}`,
+              subject: `${service.name} Verification Code - OFFLINE DEMO`,
+              content: `Your ${service.name} verification code is: ${code}. This is a demo email that works completely offline! Reference: ${service.service}${Math.floor(Math.random() * 90000) + 10000}. Enter this code to continue.`,
               time: new Date(Date.now() - (3600000 * (i + 1))), // Hours ago
               read: Math.random() > 0.7 // Some emails are read
           });
