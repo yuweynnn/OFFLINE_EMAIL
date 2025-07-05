@@ -40,10 +40,11 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--background-color);
+  background: linear-gradient(135deg, var(--background-color), var(--surface-color));
   color: var(--text-primary);
-  line-height: 1;
+  line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
 }
 
 .container {
@@ -121,14 +122,21 @@ header p {
 
 input[type="email"], select {
   flex: 1;
-  min-width: 18ppx;
-  padding: 4px 6px;
-  border: 1px solid var(--border-color);
-  border-radius: 3px;
-  font-size: 10px;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
   background: var(--background-color);
   color: var(--text-primary);
-  transition: border-color 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input[type="email"]:focus, select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.1);
 }
 
 .btn {
@@ -669,15 +677,24 @@ footer {
   top: 70px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--warning-color);
+  background: linear-gradient(135deg, var(--warning-color), #ff9800);
   color: #333;
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 12px 20px;
+  border-radius: 25px;
   font-size: 14px;
   font-weight: 600;
   z-index: 1001;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
   animation: slideIn 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.offline-indicator:hover {
+  background: linear-gradient(135deg, #ff9800, var(--warning-color));
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
 }
 
 /* PWA display mode adjustments */

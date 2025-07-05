@@ -9,11 +9,11 @@ class YuenDispoMail {
           'guerrillamail.org',
           'guerrillamail.biz',
           'guerrillamailblock.com',
-              'guerrillamail.de',
-              'grr.la',
-              'guerrillamail.net',
-              'sharklasers.com',
-              'guerrillamail.info',
+          'guerrillamail.de',
+          'grr.la',
+          'guerrillamail.net',
+          'sharklasers.com',
+          'guerrillamail.info',
       ];
       this.lastEmailCount = 0;
       this.apiKeys = {
@@ -22,11 +22,15 @@ class YuenDispoMail {
       this.mailslurpInboxes = new Map();
       this.isOffline = !navigator.onLine;
       this.offlineIndicator = null;
+      this.db = null;
+      this.maxOfflineEmails = 1000000; // Store up to 1 million emails
+      this.offlineEmailAccounts = new Map(); // Track multiple email accounts offline
 
       this.init();
   }
 
   init() {
+      this.initIndexedDB();
       this.setupDomainSelect();
       this.setupEventListeners();
       this.setupModal();
@@ -35,6 +39,42 @@ class YuenDispoMail {
       this.requestNotificationPermission();
       this.setupOfflineHandling();
       this.loadCachedData();
+  }
+
+  async initIndexedDB() {
+      return new Promise((resolve, reject) => {
+          const request = indexedDB.open('YuenDispoMailDB', 1);
+          
+          request.onerror = () => {
+              console.error('IndexedDB failed to open');
+              reject(request.error);
+          };
+          
+          request.onsuccess = () => {
+              this.db = request.result;
+              console.log('IndexedDB opened successfully');
+              resolve();
+          };
+          
+          request.onupgradeneeded = (event) => {
+              const db = event.target.result;
+              
+              // Create emails store
+              if (!db.objectStoreNames.contains('emails')) {
+                  const emailStore = db.createObjectStore('emails', { keyPath: 'id' });
+                  emailStore.createIndex('email_address', 'email_address', { unique: false });
+                  emailStore.createIndex('timestamp', 'timestamp', { unique: false });
+              }
+              
+              // Create accounts store
+              if (!db.objectStoreNames.contains('accounts')) {
+                  const accountStore = db.createObjectStore('accounts', { keyPath: 'email' });
+                  accountStore.createIndex('last_accessed', 'last_accessed', { unique: false });
+              }
+              
+              console.log('IndexedDB schema created');
+          };
+      });
   }
 
   async requestNotificationPermission() {
@@ -71,8 +111,54 @@ class YuenDispoMail {
       
       this.offlineIndicator = document.createElement('div');
       this.offlineIndicator.className = 'offline-indicator';
-      this.offlineIndicator.innerHTML = '📡 Offline Mode - Using cached data';
+      this.offlineIndicator.innerHTML = '📡 Offline Mode - Click to switch between stored email accounts';
+      this.offlineIndicator.style.cursor = 'pointer';
+      this.offlineIndicator.onclick = () => this.showOfflineAccountSwitcher();
       document.body.appendChild(this.offlineIndicator);
+  }
+
+  async showOfflineAccountSwitcher() {
+      const accounts = await this.getAllOfflineAccounts();
+      if (accounts.length === 0) {
+          this.showNotification('No offline email accounts available', 'warning');
+          return;
+      }
+
+      const accountList = accounts.map(acc => 
+          `<div style="padding: 10px; border: 1px solid var(--border-color); margin: 5px; cursor: pointer; border-radius: 5px;" 
+                onclick="window.yuenDispoMail.switchToOfflineAccount('${acc.email}')">
+              <strong>${acc.email}</strong><br>
+              <small>${acc.email_count} emails • Last accessed: ${new Date(acc.last_accessed).toLocaleDateString()}</small>
+          </div>`
+      ).join('');
+
+      const modal = document.getElementById('emailModal');
+      const content = document.getElementById('emailContent');
+      
+      content.innerHTML = `
+          <h3>📡 Offline Email Accounts</h3>
+          <p>Switch between your stored offline email accounts:</p>
+          <div style="max-height: 400px; overflow-y: auto;">
+              ${accountList}
+          </div>
+          <button onclick="window.yuenDispoMail.closeModal()" class="btn primary" style="margin-top: 15px;">Close</button>
+      `;
+      
+      modal.style.display = 'block';
+  }
+
+  async switchToOfflineAccount(emailAddress) {
+      this.closeModal();
+      this.currentEmail = emailAddress;
+      this.displayCurrentEmail(emailAddress);
+      
+      const emails = await this.loadEmailsFromIndexedDB(emailAddress);
+      this.emails = emails;
+      this.lastEmailCount = emails.length;
+      this.displayEmails();
+      
+      this.saveToCache('current_email', emailAddress);
+      this.showNotification(`Switched to offline account: ${emailAddress} (${emails.length} emails)`, 'success');
   }
 
   hideOfflineIndicator() {
@@ -100,20 +186,139 @@ class YuenDispoMail {
       }
   }
 
-  loadCachedData() {
+  async saveEmailsToIndexedDB(emails, emailAddress) {
+      if (!this.db) return;
+      
+      const transaction = this.db.transaction(['emails', 'accounts'], 'readwrite');
+      const emailStore = transaction.objectStore('emails');
+      const accountStore = transaction.objectStore('accounts');
+      
+      try {
+          // Save account info
+          await accountStore.put({
+              email: emailAddress,
+              last_accessed: new Date(),
+              email_count: emails.length
+          });
+          
+          // Save emails
+          for (const email of emails) {
+              const emailData = {
+                  ...email,
+                  email_address: emailAddress,
+                  timestamp: new Date(email.time),
+                  saved_at: new Date()
+              };
+              await emailStore.put(emailData);
+          }
+          
+          console.log(`Saved ${emails.length} emails for ${emailAddress} to IndexedDB`);
+      } catch (error) {
+          console.error('Failed to save emails to IndexedDB:', error);
+      }
+  }
+
+  async loadEmailsFromIndexedDB(emailAddress) {
+      if (!this.db) return [];
+      
+      const transaction = this.db.transaction(['emails'], 'readonly');
+      const store = transaction.objectStore('emails');
+      const index = store.index('email_address');
+      
+      try {
+          const request = index.getAll(emailAddress);
+          return new Promise((resolve, reject) => {
+              request.onsuccess = () => {
+                  const emails = request.result.map(email => ({
+                      ...email,
+                      time: new Date(email.timestamp)
+                  }));
+                  resolve(emails);
+              };
+              request.onerror = () => reject(request.error);
+          });
+      } catch (error) {
+          console.error('Failed to load emails from IndexedDB:', error);
+          return [];
+      }
+  }
+
+  async getAllOfflineAccounts() {
+      if (!this.db) return [];
+      
+      const transaction = this.db.transaction(['accounts'], 'readonly');
+      const store = transaction.objectStore('accounts');
+      
+      try {
+          const request = store.getAll();
+          return new Promise((resolve, reject) => {
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => reject(request.error);
+          });
+      } catch (error) {
+          console.error('Failed to load offline accounts:', error);
+          return [];
+      }
+  }
+
+  async cleanupOldEmails() {
+      if (!this.db) return;
+      
+      const transaction = this.db.transaction(['emails'], 'readwrite');
+      const store = transaction.objectStore('emails');
+      const index = store.index('timestamp');
+      
+      try {
+          // Get all emails sorted by timestamp
+          const request = index.getAll();
+          request.onsuccess = () => {
+              const allEmails = request.result;
+              
+              if (allEmails.length > this.maxOfflineEmails) {
+                  // Keep only the newest emails
+                  const emailsToDelete = allEmails
+                      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                      .slice(0, allEmails.length - this.maxOfflineEmails);
+                  
+                  emailsToDelete.forEach(email => {
+                      store.delete(email.id);
+                  });
+                  
+                  console.log(`Cleaned up ${emailsToDelete.length} old emails`);
+              }
+          };
+      } catch (error) {
+          console.error('Failed to cleanup old emails:', error);
+      }
+  }
+
+  async loadCachedData() {
       // Load cached current email
       const cachedEmail = this.loadFromCache('current_email');
       if (cachedEmail) {
           this.currentEmail = cachedEmail;
           this.displayCurrentEmail(cachedEmail);
+          
+          // Load emails for this account from IndexedDB
+          const indexedEmails = await this.loadEmailsFromIndexedDB(cachedEmail);
+          if (indexedEmails.length > 0) {
+              this.emails = indexedEmails;
+              this.lastEmailCount = this.emails.length;
+              this.displayEmails();
+              
+              if (this.isOffline) {
+                  this.showNotification(`Loaded ${this.emails.length} offline emails for ${cachedEmail}`, 'success');
+              }
+              return;
+          }
       }
 
-      // Load cached emails
+      // Fallback to localStorage if IndexedDB fails
       const cachedEmails = this.loadFromCache('emails');
       if (cachedEmails && cachedEmails.length > 0) {
           this.emails = cachedEmails.map(email => ({
               ...email,
-              time: new Date(email.time) // Convert time back to Date object
+              time: new Date(email.time)
           }));
           this.lastEmailCount = this.emails.length;
           this.displayEmails();
@@ -121,6 +326,19 @@ class YuenDispoMail {
           if (this.isOffline) {
               this.showNotification(`Loaded ${this.emails.length} cached emails`, 'info');
           }
+      }
+
+      // Show available offline accounts
+      const offlineAccounts = await this.getAllOfflineAccounts();
+      if (offlineAccounts.length > 0) {
+          this.showOfflineAccountsInfo(offlineAccounts);
+      }
+  }
+
+  showOfflineAccountsInfo(accounts) {
+      if (this.isOffline && accounts.length > 0) {
+          const accountsList = accounts.map(acc => `${acc.email} (${acc.email_count} emails)`).join(', ');
+          this.showNotification(`${accounts.length} offline email accounts available: ${accountsList.substring(0, 100)}...`, 'info');
       }
   }
 
@@ -375,10 +593,16 @@ class YuenDispoMail {
           this.emails = emails;
           this.lastEmailCount = emails.length;
           
-          // Cache the emails for offline use
+          // Cache the emails for offline use (both localStorage and IndexedDB)
           this.saveToCache('emails', this.emails);
           this.saveToCache('current_email', this.currentEmail);
           this.saveToCache('last_update', new Date().toISOString());
+          
+          // Save to IndexedDB for massive offline storage
+          await this.saveEmailsToIndexedDB(this.emails, this.currentEmail);
+          
+          // Cleanup old emails if we exceed the limit
+          await this.cleanupOldEmails();
           
           this.displayEmails();
 
